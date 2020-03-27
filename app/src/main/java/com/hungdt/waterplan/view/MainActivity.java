@@ -6,15 +6,15 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.content.Intent;
-import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
 
+import com.hungdt.waterplan.KEY;
 import com.hungdt.waterplan.R;
 import com.hungdt.waterplan.database.DBHelper;
 import com.hungdt.waterplan.model.Plant;
-import com.hungdt.waterplan.model.Remind;
+import com.hungdt.waterplan.view.adater.PlantAdapter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,18 +28,18 @@ public class MainActivity extends AppCompatActivity {
     private PlantAdapter plantAdapter;
 
     private static final int REQUEST_CODE_ADD_PLANT = 100;
+    private static final int REQUEST_CODE_EDIT_PLANT = 101;
+    private static final int REQUEST_CODE_DELETE_PLANT = 102;
+
+    private int positionSave;
+
     private List<Plant> plants = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        /*DBHelper.getInstance(this).addPlan("Name",null,"abc");
-        DBHelper.getInstance(this).addRemind(String.valueOf(DBHelper.getInstance(this).getLastPlanID()),getBaseContext().getString(R.string.water),"27-03-2020 16:05","5");
-        DBHelper.getInstance(this).addRemind(String.valueOf(DBHelper.getInstance(this).getLastPlanID()),getBaseContext().getString(R.string.fertilize),"27-03-2020 16:05","45");
-        List<Remind> reminds = new ArrayList<>();
-        reminds.add(new Remind("1",getBaseContext().getString(R.string.water),"27-03-2020 16:05","5"));
-        plants.add(new Plant("1",null,"name","note",reminds));*/
+
 
         initView();
 
@@ -59,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(MainActivity.this,AddPlanActivity.class);
+                intent.putExtra(KEY.TYPE,KEY.TYPE_CREATE);
                 startActivityForResult(intent,REQUEST_CODE_ADD_PLANT);
             }
         });
@@ -90,6 +91,19 @@ public class MainActivity extends AppCompatActivity {
                 //todo
             }
         });
+
+        plantAdapter.setOnPlantItemClickListener(new PlantAdapter.OnPlantItemClickListener() {
+            @Override
+            public void OnItemClicked(int position) {
+                positionSave = position;
+                Bundle bundle = new Bundle();
+                Intent intent = new Intent(MainActivity.this,AddPlanActivity.class);
+                bundle.putSerializable(KEY.PLANT,plants.get(position));
+                intent.putExtra(KEY.TYPE,KEY.TYPE_EDIT);
+                intent.putExtras(bundle);
+                startActivityForResult(intent,REQUEST_CODE_EDIT_PLANT);
+            }
+        });
     }
 
 
@@ -97,6 +111,20 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if(requestCode == REQUEST_CODE_ADD_PLANT){
+            Plant plant = DBHelper.getInstance(this).getLastPlant();
+            plants.add(plant);
+            plantAdapter.notifyItemChanged(plants.size()-1);
+        }
+        if(requestCode == REQUEST_CODE_EDIT_PLANT){
+            Plant plant = DBHelper.getInstance(this).getOnePlant(plants.get(positionSave).getPlantID());
+            plants.set(positionSave,plant);
+            plantAdapter.notifyItemChanged(positionSave);
+        }
+        if(requestCode == REQUEST_CODE_DELETE_PLANT){
+            plants.remove(positionSave);
+            plantAdapter.notifyDataSetChanged();
+        }
     }
 
     private void initView() {

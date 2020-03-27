@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import com.hungdt.waterplan.model.Plant;
 import com.hungdt.waterplan.model.Remind;
@@ -29,7 +30,8 @@ public class DBHelper extends SQLiteOpenHelper {
     public static final String COLUMN_REMIND_PLANT_ID = "PLANT_ID";
     public static final String COLUMN_REMIND_ID = "REMIND_ID";
     public static final String COLUMN_REMIND_TYPE = "REMIND_TYPE";
-    public static final String COLUMN_REMIND_DATE_TIME = "REMIND_DATE_TIME";
+    public static final String COLUMN_REMIND_DATE = "REMIND_DATE_DATE";
+    public static final String COLUMN_REMIND_TIME = "REMIND_DATE_TIME";
     public static final String COLUMN_REMIND_CARE_CYCLE = "REMIND_CARE_CYCLE";
 
     public static final String SQL_CREATE_TABLE_PLAN = "CREATE TABLE " + TABLE_PLANT + "("
@@ -42,7 +44,8 @@ public class DBHelper extends SQLiteOpenHelper {
             + COLUMN_REMIND_PLANT_ID + " INTEGER NOT NULL, "
             + COLUMN_REMIND_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
             + COLUMN_REMIND_TYPE + " TEXT NOT NULL, "
-            + COLUMN_REMIND_DATE_TIME + " TEXT NOT NULL, "
+            + COLUMN_REMIND_DATE + " TEXT NOT NULL, "
+            + COLUMN_REMIND_TIME + " TEXT NOT NULL, "
             + COLUMN_REMIND_CARE_CYCLE + " TEXT NOT NULL" + ");";
 
     public DBHelper(Context context) {
@@ -50,7 +53,7 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public static synchronized DBHelper getInstance(Context context) {
-        if ( instance == null) {
+        if (instance == null) {
             instance = new DBHelper(context);
         }
         return instance;
@@ -68,6 +71,7 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public void updatePlan(String planID, String planName, String planAvatar, String planNote) {
+
         SQLiteDatabase db = instance.getWritableDatabase();
 
         ContentValues values = new ContentValues();
@@ -89,23 +93,25 @@ public class DBHelper extends SQLiteOpenHelper {
         db.close();
     }
 
-    public void addRemind(String planID, String remindType, String remindDateTime, String careCycle) {
+    public void addRemind(String planID, String remindType, String remindDate, String remindTime, String careCycle) {
         SQLiteDatabase database = instance.getWritableDatabase();
 
         ContentValues values = new ContentValues();
         values.put(COLUMN_REMIND_PLANT_ID, planID);
         values.put(COLUMN_REMIND_TYPE, remindType);
-        values.put(COLUMN_REMIND_DATE_TIME, remindDateTime);
+        values.put(COLUMN_REMIND_DATE, remindDate);
+        values.put(COLUMN_REMIND_TIME, remindTime);
         values.put(COLUMN_REMIND_CARE_CYCLE, careCycle);
         database.insert(TABLE_REMIND, null, values);
         database.close();
     }
 
-    public void updateRemind(String remindID, String remindDateTime, String careCycle) {
+    public void updateRemind(String remindID, String remindDate, String remindTime, String careCycle) {
         SQLiteDatabase db = instance.getWritableDatabase();
 
         ContentValues values = new ContentValues();
-        values.put(COLUMN_REMIND_DATE_TIME, remindDateTime);
+        values.put(COLUMN_REMIND_DATE, remindDate);
+        values.put(COLUMN_REMIND_TIME, remindTime);
         values.put(COLUMN_REMIND_CARE_CYCLE, careCycle);
         db.update(TABLE_PLANT, values, COLUMN_REMIND_ID + "='" + remindID + "'", null);
         db.close();
@@ -131,18 +137,40 @@ public class DBHelper extends SQLiteOpenHelper {
         db.close();
     }
 
-    public int getLastPlanID() {
+    public String getLastPlanID() {
         SQLiteDatabase db = instance.getWritableDatabase();
 
-        Cursor cursor = db.rawQuery(String.format("SELECT * FROM '%s';", TABLE_PLANT), null);
-
-        cursor.moveToLast();
-        int lastID = cursor.getColumnIndex(COLUMN_PLANT_ID);
-
+        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_PLANT + " ORDER BY " + COLUMN_PLANT_ID + " DESC LIMIT 1", null);
+        String lastID = "";
+        while (cursor.moveToNext()) {
+            lastID = cursor.getString(0);
+        }
         cursor.close();
         db.close();
 
         return lastID;
+    }
+
+    public Plant getOnePlant(String plantID) {
+        SQLiteDatabase db = instance.getWritableDatabase();
+
+        Cursor cursor = db.rawQuery(String.format("SELECT * FROM '%s';", TABLE_PLANT), null);
+        Plant plant = null;
+        if (cursor.moveToFirst()) {
+            while (!cursor.isAfterLast()) {
+                if (cursor.getString(cursor.getColumnIndex(COLUMN_PLANT_ID)).equals(plantID)) {
+                    String plantImage = cursor.getString(cursor.getColumnIndex(COLUMN_PLANT_IMAGE));
+                    String plantName = cursor.getString(cursor.getColumnIndex(COLUMN_PLANT_NAME));
+                    String plantNote = cursor.getString(cursor.getColumnIndex(COLUMN_PLANT_NOTE));
+                    List<Remind> reminds = getAllPlantRemind(plantID);
+                    plant = new Plant(plantID, plantImage, plantName, plantNote, reminds);
+                }
+                cursor.moveToNext();
+            }
+        }
+        cursor.close();
+        db.close();
+        return plant;
     }
 
     public List<Plant> getAllPlant() {
@@ -156,30 +184,30 @@ public class DBHelper extends SQLiteOpenHelper {
                 String plantImage = cursor.getString(cursor.getColumnIndex(COLUMN_PLANT_IMAGE));
                 String plantName = cursor.getString(cursor.getColumnIndex(COLUMN_PLANT_NAME));
                 String plantNote = cursor.getString(cursor.getColumnIndex(COLUMN_PLANT_NOTE));
-                List<Remind> reminds= getAllPlantRemind(plantID);
+                List<Remind> reminds = getAllPlantRemind(plantID);
                 plants.add(new Plant(plantID, plantImage, plantName, plantNote, reminds));
                 cursor.moveToNext();
             }
         }
         cursor.close();
         db.close();
-
         return plants;
     }
 
     public List<Remind> getAllPlantRemind(String plantID) {
         SQLiteDatabase db = instance.getWritableDatabase();
 
-        Cursor cursor = db.rawQuery(String.format("SELECT * FROM '%s';", TABLE_PLANT), null);
+        Cursor cursor = db.rawQuery(String.format("SELECT * FROM '%s';", TABLE_REMIND), null);
         List<Remind> reminds = new ArrayList<>();
         if (cursor.moveToFirst()) {
             while (!cursor.isAfterLast()) {
-                if(cursor.getString(cursor.getColumnIndex(COLUMN_PLANT_ID)).equals(plantID)){
+                if (cursor.getString(cursor.getColumnIndex(COLUMN_REMIND_PLANT_ID)).equals(plantID)) {
                     String remindID = cursor.getString(cursor.getColumnIndex(COLUMN_REMIND_ID));
                     String remindType = cursor.getString(cursor.getColumnIndex(COLUMN_REMIND_TYPE));
-                    String remindDateTime = cursor.getString(cursor.getColumnIndex(COLUMN_REMIND_DATE_TIME));
+                    String remindDate = cursor.getString(cursor.getColumnIndex(COLUMN_REMIND_DATE));
+                    String remindTime = cursor.getString(cursor.getColumnIndex(COLUMN_REMIND_TIME));
                     String careCycle = cursor.getString(cursor.getColumnIndex(COLUMN_REMIND_CARE_CYCLE));
-                    reminds.add(new Remind(remindID, remindType, remindDateTime, careCycle));
+                    reminds.add(new Remind(remindID, remindType, remindDate, remindTime, careCycle));
                 }
                 cursor.moveToNext();
             }
@@ -188,6 +216,27 @@ public class DBHelper extends SQLiteOpenHelper {
         db.close();
 
         return reminds;
+    }
+
+    public Plant getLastPlant() {
+        SQLiteDatabase db = instance.getWritableDatabase();
+
+        Cursor cursor = db.rawQuery("SELECT * FROM " + TABLE_PLANT + " ORDER BY " + COLUMN_PLANT_ID + " DESC LIMIT 1", null);
+        Plant plant = null;
+        while (cursor.moveToNext()) {
+            String plantID = cursor.getString(cursor.getColumnIndex(COLUMN_PLANT_ID));
+            String plantName = cursor.getString(cursor.getColumnIndex(COLUMN_PLANT_NAME));
+            String plantImage = cursor.getString(cursor.getColumnIndex(COLUMN_PLANT_IMAGE));
+            String plantNote = cursor.getString(cursor.getColumnIndex(COLUMN_PLANT_NOTE));
+            List<Remind> reminds = getAllPlantRemind(plantID);
+            plant = new Plant(plantID, plantImage, plantName, plantNote, reminds);
+        }
+
+
+        cursor.close();
+        db.close();
+
+        return plant;
     }
 
     @Override

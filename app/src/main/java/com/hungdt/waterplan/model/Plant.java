@@ -1,8 +1,9 @@
 package com.hungdt.waterplan.model;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class Plant {
+public class Plant implements Serializable {
     private String plantID;
     private String plantImage;
     private String plantName;
