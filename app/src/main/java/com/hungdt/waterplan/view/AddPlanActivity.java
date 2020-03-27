@@ -31,6 +31,7 @@ public class AddPlanActivity extends AppCompatActivity {
 
     private List<Remind> reminds = new ArrayList<>();
 
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
