@@ -5,4 +5,5 @@ public interface KEY {
     String TYPE_CREATE = "create";
     String TYPE_EDIT = "edit";
     String TYPE = "type";
+    String DELETE = "delete";
 }

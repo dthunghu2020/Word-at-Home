@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -112,18 +113,24 @@ public class MainActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if(requestCode == REQUEST_CODE_ADD_PLANT){
-            Plant plant = DBHelper.getInstance(this).getLastPlant();
-            plants.add(plant);
-            plantAdapter.notifyItemChanged(plants.size()-1);
+            if(resultCode == Activity.RESULT_CANCELED){
+                Plant plant = DBHelper.getInstance(this).getLastPlant();
+                plants.add(plant);
+                plantAdapter.notifyItemChanged(plants.size()-1);
+            }
         }
         if(requestCode == REQUEST_CODE_EDIT_PLANT){
-            Plant plant = DBHelper.getInstance(this).getOnePlant(plants.get(positionSave).getPlantID());
-            plants.set(positionSave,plant);
-            plantAdapter.notifyItemChanged(positionSave);
-        }
-        if(requestCode == REQUEST_CODE_DELETE_PLANT){
-            plants.remove(positionSave);
-            plantAdapter.notifyDataSetChanged();
+            //xoa
+            if(resultCode == Activity.RESULT_OK){
+                plants.remove(positionSave);
+                plantAdapter.notifyDataSetChanged();
+            }
+            //sua
+            if (resultCode == Activity.RESULT_CANCELED) {
+                Plant plant = DBHelper.getInstance(this).getOnePlant(plants.get(positionSave).getPlantID());
+                plants.set(positionSave,plant);
+                plantAdapter.notifyItemChanged(positionSave);
+            }
         }
     }
 
