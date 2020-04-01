@@ -113,7 +113,7 @@ public class PlantAdapter extends RecyclerView.Adapter<PlantAdapter.PlanHolder> 
                         e.printStackTrace();
                     }
                     remindCircle = Integer.parseInt(reminds.get(i).getCareCycle());
-                    numberOfDay = numberDayCreate + remindCircle - numberDayInStance-1;
+                    numberOfDay = numberDayCreate + remindCircle - numberDayInStance;
                     holder.pbFertilizer.setMax(remindCircle);
                     if (numberOfDay > 0) {
                         holder.pbFertilizer.setProgress(numberOfDay);
@@ -133,7 +133,7 @@ public class PlantAdapter extends RecyclerView.Adapter<PlantAdapter.PlanHolder> 
                         e.printStackTrace();
                     }
                     remindCircle = Integer.parseInt(reminds.get(i).getCareCycle());
-                    numberOfDay = numberDayCreate + remindCircle - numberDayInStance-2;
+                    numberOfDay = numberDayCreate + remindCircle - numberDayInStance;
                     holder.pbPrune.setMax(remindCircle);
                     if (numberOfDay > 0) {
                         holder.pbPrune.setProgress(numberOfDay);
@@ -153,7 +153,7 @@ public class PlantAdapter extends RecyclerView.Adapter<PlantAdapter.PlanHolder> 
                         e.printStackTrace();
                     }
                     remindCircle = Integer.parseInt(reminds.get(i).getCareCycle());
-                    numberOfDay = numberDayCreate + remindCircle - numberDayInStance-3;
+                    numberOfDay = numberDayCreate + remindCircle - numberDayInStance;
                     holder.pbSpray.setMax(remindCircle);
                     if (numberOfDay > 0) {
                         holder.pbSpray.setProgress(numberOfDay);

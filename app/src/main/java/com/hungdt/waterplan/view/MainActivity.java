@@ -72,38 +72,38 @@ public class MainActivity extends AppCompatActivity {
                     startActivityForResult(intent, REQUEST_CODE_ADD_PLANT);
                 }else {
                     if (typeOfCare.equals(KEY.TYPE_WATER)) {
-                        //for thay đổi dữ liệu care, cập nhật lại check trong plants.
                         for (int i = 0; i < plants.size(); i++) {
                             if (plants.get(i).isTicked()) {
                                 DBHelper.getInstance(MainActivity.this).refreshRemind(plants.get(i).getPlantID(),getInstantDateTime(),KEY.TYPE_WATER);
                                 plants.get(i).setTicked(!plants.get(i).isTicked());
+                                updateView(i);
                             }
                         }
                     }
                     if (typeOfCare.equals(KEY.TYPE_FERTILIZER)) {
-                        //for thay đổi dữ liệu care, cập nhật lại check trong plants.
                         for (int i = 0; i < plants.size(); i++) {
                             if (plants.get(i).isTicked()) {
                                 DBHelper.getInstance(MainActivity.this).refreshRemind(plants.get(i).getPlantID(),getInstantDateTime(),KEY.TYPE_FERTILIZER);
                                 plants.get(i).setTicked(!plants.get(i).isTicked());
+                                updateView(i);
                             }
                         }
                     }
                     if (typeOfCare.equals(KEY.TYPE_SPRAY)) {
-                        //for thay đổi dữ liệu care, cập nhật lại check trong plants.
                         for (int i = 0; i < plants.size(); i++) {
                             if (plants.get(i).isTicked()) {
                                 DBHelper.getInstance(MainActivity.this).refreshRemind(plants.get(i).getPlantID(),getInstantDateTime(),KEY.TYPE_SPRAY);
                                 plants.get(i).setTicked(!plants.get(i).isTicked());
+                                updateView(i);
                             }
                         }
                     }
                     if (typeOfCare.equals(KEY.TYPE_PRUNE)) {
-                        //for thay đổi dữ liệu care, cập nhật lại check trong plants.
                         for (int i = 0; i < plants.size(); i++) {
                             if (plants.get(i).isTicked()) {
                                 DBHelper.getInstance(MainActivity.this).refreshRemind(plants.get(i).getPlantID(),getInstantDateTime(),KEY.TYPE_PRUNE);
                                 plants.get(i).setTicked(!plants.get(i).isTicked());
+                                updateView(i);
                             }
                         }
                     }
@@ -219,12 +219,16 @@ public class MainActivity extends AppCompatActivity {
                     plantAdapter.notifyDataSetChanged();
                 }
                 if (typeResult.equals(KEY.UPDATE)) {
-                    Plant plant = DBHelper.getInstance(this).getOnePlant(plants.get(positionSave).getPlantID());
-                    plants.set(positionSave, plant);
-                    plantAdapter.notifyItemChanged(positionSave);
+                    updateView(positionSave);
                 }
             }
         }
+    }
+
+    private void updateView(int position) {
+        Plant plant = DBHelper.getInstance(this).getOnePlant(plants.get(position).getPlantID());
+        plants.set(position, plant);
+        plantAdapter.notifyItemChanged(position);
     }
 
     @Override

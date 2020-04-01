@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:gravity="center"
-    android:minWidth="@dimen/_150sdp"
+    android:minWidth="@dimen/_180sdp"
     android:orientation="vertical"
     android:padding="@dimen/_8sdp">
 
@@ -13,10 +13,26 @@
         android:text="Edit Remind"
         android:textSize="25sp" />
 
+
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/_10sdp">
+        android:layout_marginTop="@dimen/_5sdp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/edtLastTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:editable="false"
+            android:hint="Last Time Take Care" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_2sdp">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/edtRemindDay"
@@ -30,7 +46,7 @@
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/_10sdp">
+        android:layout_marginTop="@dimen/_2sdp">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/edtRemindTime"
@@ -38,8 +54,8 @@
             android:layout_height="wrap_content"
             android:clickable="true"
             android:editable="false"
-            android:hint="Remind Time"
-            android:focusable="true" />
+            android:focusable="true"
+            android:hint="Remind Time" />
 
     </com.google.android.material.textfield.TextInputLayout>
 
@@ -47,26 +63,26 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/_10sdp"
+        android:layout_marginTop="@dimen/_5sdp"
         android:orientation="horizontal">
 
         <Button
-            android:id="@+id/btnEdit"
+            android:id="@+id/btnOk"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_6sdp"
             android:layout_marginEnd="@dimen/_3sdp"
             android:layout_weight="1"
-            android:text="Edit" />
+            android:text="OK" />
 
         <Button
-            android:id="@+id/btnBack"
+            android:id="@+id/btnCancel"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/_3sdp"
             android:layout_marginEnd="@dimen/_6sdp"
             android:layout_weight="1"
-            android:text="Back" />
+            android:text="Cancel" />
     </LinearLayout>
 
 

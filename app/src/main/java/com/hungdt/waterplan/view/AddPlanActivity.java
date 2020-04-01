@@ -3,6 +3,7 @@ package com.hungdt.waterplan.view;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.DatePickerDialog;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
@@ -12,8 +13,10 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -76,7 +79,9 @@ public class AddPlanActivity extends AppCompatActivity {
     private static final int GALLERY_PERMISSION_CODE = 201;
     private static final int CAMERA_REQUEST_CODE = 202;
     private static final int GALLERY_REQUEST_CODE = 203;
-    String currentPhotoPath = "";
+    private String currentPhotoPath = "";
+    private String type = "";
+    private String calenderSave = "";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -84,7 +89,7 @@ public class AddPlanActivity extends AppCompatActivity {
         setContentView(R.layout.activity_add_plan);
 
         initView();
-
+        calenderSave = getInstantDateTime();
         String[] listCheck = {this.getResources().getString(R.string.water),
                 this.getResources().getString(R.string.fertilize),
                 this.getResources().getString(R.string.spray),
@@ -92,7 +97,7 @@ public class AddPlanActivity extends AppCompatActivity {
         checkRemind.addAll(Arrays.asList(listCheck));
 
         Intent intent = getIntent();
-        final String type = intent.getStringExtra(KEY.TYPE);
+        type = intent.getStringExtra(KEY.TYPE);
         assert type != null;
         if (type.equals(KEY.TYPE_CREATE)) {
             imgDeletePlant.setVisibility(View.GONE);
@@ -128,7 +133,7 @@ public class AddPlanActivity extends AppCompatActivity {
                     checkRemind.remove(this.getResources().getString(R.string.prune));
                 }
             }
-            if(checkRemind.size()==0){
+            if (checkRemind.size() == 0) {
                 addRemind.setVisibility(View.GONE);
             }
         }
@@ -167,7 +172,7 @@ public class AddPlanActivity extends AppCompatActivity {
                             String plantID = DBHelper.getInstance(AddPlanActivity.this).getLastPlanID();
                             for (int i = 0; i < reminds.size(); i++) {
                                 Remind remind = reminds.get(i);
-                                DBHelper.getInstance(AddPlanActivity.this).addRemind(plantID, remind.getRemindType(), remind.getRemindCreateDT(),remind.getRemindTime(), remind.getCareCycle());
+                                DBHelper.getInstance(AddPlanActivity.this).addRemind(plantID, remind.getRemindType(), remind.getRemindCreateDT(), remind.getRemindTime(), remind.getCareCycle());
                             }
                             reminds.clear();
                         }
@@ -356,7 +361,7 @@ public class AddPlanActivity extends AppCompatActivity {
 
     private File createImageFile() throws IOException {
         // Create an image file name
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        @SuppressLint("SimpleDateFormat") String timeStamp = new SimpleDateFormat(Constant.getDateTimeFormat()).format(new Date());
         String imageFileName = "JPEG_" + timeStamp + "_";
         //File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
@@ -453,7 +458,7 @@ public class AddPlanActivity extends AppCompatActivity {
                 if (checkRemind.size() == 0) {
                     addRemind.setVisibility(View.GONE);
                 }
-                reminds.add(new Remind("0", dialog.getContext().getResources().getString(R.string.water), getInstantDateTime(),"07:00","5"));
+                reminds.add(new Remind("0", dialog.getContext().getResources().getString(R.string.water), getInstantDateTime(), "07:00", "5"));
                 remindAdapter.notifyDataSetChanged();
                 dialog.dismiss();
 
@@ -467,7 +472,7 @@ public class AddPlanActivity extends AppCompatActivity {
                 if (checkRemind.size() == 0) {
                     addRemind.setVisibility(View.GONE);
                 }
-                reminds.add(new Remind("1", dialog.getContext().getResources().getString(R.string.fertilize), getInstantDateTime(),"07:00", "5"));
+                reminds.add(new Remind("1", dialog.getContext().getResources().getString(R.string.fertilize), getInstantDateTime(), "07:00", "5"));
                 remindAdapter.notifyDataSetChanged();
                 dialog.dismiss();
             }
@@ -480,7 +485,7 @@ public class AddPlanActivity extends AppCompatActivity {
                 if (checkRemind.size() == 0) {
                     addRemind.setVisibility(View.GONE);
                 }
-                reminds.add(new Remind("2", dialog.getContext().getResources().getString(R.string.spray), getInstantDateTime(),"07:00", "5"));
+                reminds.add(new Remind("2", dialog.getContext().getResources().getString(R.string.spray), getInstantDateTime(), "07:00", "5"));
                 remindAdapter.notifyDataSetChanged();
                 dialog.dismiss();
             }
@@ -493,7 +498,7 @@ public class AddPlanActivity extends AppCompatActivity {
                 if (checkRemind.size() == 0) {
                     addRemind.setVisibility(View.GONE);
                 }
-                reminds.add(new Remind("3", dialog.getContext().getResources().getString(R.string.prune), getInstantDateTime(),"07:00", "5"));
+                reminds.add(new Remind("3", dialog.getContext().getResources().getString(R.string.prune), getInstantDateTime(), "07:00", "5"));
                 remindAdapter.notifyDataSetChanged();
                 dialog.dismiss();
             }
@@ -506,21 +511,63 @@ public class AddPlanActivity extends AppCompatActivity {
         final Dialog dialog = new Dialog(this);
         dialog.setContentView(R.layout.edit_remind_dialog);
 
+        final TextInputEditText edtLastTime = dialog.findViewById(R.id.edtLastTime);
         final TextInputEditText edtRemindDay = dialog.findViewById(R.id.edtRemindDay);
         final TextInputEditText edtRemindTime = dialog.findViewById(R.id.edtRemindTime);
-        final Button btnEdit = dialog.findViewById(R.id.btnEdit);
-        final Button btnBack = dialog.findViewById(R.id.btnBack);
+        final Button btnOk = dialog.findViewById(R.id.btnOk);
+        final Button btnCancel = dialog.findViewById(R.id.btnCancel);
 
         edtRemindDay.setText(remind.getCareCycle());
-        @SuppressLint("SimpleDateFormat") SimpleDateFormat sdf = new SimpleDateFormat(Constant.getTimeFormat());
+        @SuppressLint("SimpleDateFormat") SimpleDateFormat sdfTime = new SimpleDateFormat(Constant.getTimeFormat());
+        @SuppressLint("SimpleDateFormat") final SimpleDateFormat sdfDate = new SimpleDateFormat(Constant.getDateFormat());
+        @SuppressLint("SimpleDateFormat") final SimpleDateFormat sdfDateTime = new SimpleDateFormat(Constant.getDateTimeFormat());
+        @SuppressLint("SimpleDateFormat") final SimpleDateFormat sdfD = new SimpleDateFormat(Constant.getDayFormat());
+        @SuppressLint("SimpleDateFormat") final SimpleDateFormat sdfM = new SimpleDateFormat(Constant.getMonthFormat());
+        @SuppressLint("SimpleDateFormat") final SimpleDateFormat sdfY = new SimpleDateFormat(Constant.getYearFormat());
         Date date;
         try {
-            date = sdf.parse(remind.getRemindTime());
-            assert date != null;
-            edtRemindTime.setText(sdf.format(date));
+            date = sdfTime.parse(remind.getRemindTime());
+            if (date != null) {
+                edtRemindTime.setText(sdfTime.format(date));
+            }
+            date = sdfDateTime.parse(remind.getRemindCreateDT());
+            if (date != null) {
+                edtLastTime.setText(sdfDate.format(date));
+            }
         } catch (ParseException e) {
             e.printStackTrace();
         }
+
+        final DatePickerDialog.OnDateSetListener dateDialog = new DatePickerDialog.OnDateSetListener() {
+            @Override
+            public void onDateSet(DatePicker datePicker, int year, int monthOfYear, int dayOfMonth) {
+                calendar.set(Calendar.YEAR, year);
+                calendar.set(Calendar.MONTH, monthOfYear);
+                calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
+                edtLastTime.setText(sdfDate.format(calendar.getTime()));
+                Date dateCalendar;
+                try {
+                    dateCalendar = sdfDateTime.parse(calenderSave);
+                    if (dateCalendar != null) {
+                        calendar.set(Calendar.YEAR, Integer.parseInt(sdfY.format(dateCalendar)));
+                        //? set month phải +1 ms chạy đúng???
+                        calendar.set(Calendar.MONTH, Integer.parseInt(sdfM.format(dateCalendar))-1);
+                        calendar.set(Calendar.DAY_OF_MONTH, Integer.parseInt(sdfD.format(dateCalendar)));
+                    }
+                } catch (ParseException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        edtLastTime.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                new DatePickerDialog(AddPlanActivity.this, dateDialog, calendar
+                        .get(Calendar.YEAR), calendar.get(Calendar.MONTH),
+                        calendar.get(Calendar.DAY_OF_MONTH)).show();
+            }
+        });
 
         edtRemindTime.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -529,13 +576,15 @@ public class AddPlanActivity extends AppCompatActivity {
             }
         });
 
-        btnEdit.setOnClickListener(new View.OnClickListener() {
+        btnOk.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (Objects.requireNonNull(edtRemindDay.getText()).toString().isEmpty() || Objects.requireNonNull(edtRemindTime.getText()).toString().isEmpty()) {
+                if (Objects.requireNonNull(edtLastTime.getText()).toString().isEmpty() ||
+                        Objects.requireNonNull(edtRemindDay.getText()).toString().isEmpty() ||
+                        Objects.requireNonNull(edtRemindTime.getText()).toString().isEmpty()) {
                     Toast.makeText(AddPlanActivity.this, "Please enter all title!", Toast.LENGTH_SHORT).show();
                 } else {
-                    Remind remindEdited = new Remind(remind.getRemindID(), remind.getRemindType(), remind.getRemindCreateDT(), edtRemindTime.getText().toString(), edtRemindDay.getText().toString());
+                    Remind remindEdited = new Remind(remind.getRemindID(), remind.getRemindType(), edtRemindTime.getText().toString() + "-" + edtLastTime.getText().toString(), edtRemindTime.getText().toString(), edtRemindDay.getText().toString());
                     reminds.set(position, remindEdited);
                     remindAdapter.notifyItemChanged(position);
                     dialog.dismiss();
@@ -543,7 +592,7 @@ public class AddPlanActivity extends AppCompatActivity {
             }
         });
 
-        btnBack.setOnClickListener(new View.OnClickListener() {
+        btnCancel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 dialog.dismiss();
@@ -575,8 +624,9 @@ public class AddPlanActivity extends AppCompatActivity {
     }
 
     private String getInstantDateTime() {
-        SimpleDateFormat sdf = new SimpleDateFormat(Constant.getDateTimeFormat(), Locale.US);
+        @SuppressLint("SimpleDateFormat") SimpleDateFormat sdf = new SimpleDateFormat(Constant.getDateTimeFormat());
         return sdf.format(calendar.getTime());
+
     }
 
     private void initView() {
