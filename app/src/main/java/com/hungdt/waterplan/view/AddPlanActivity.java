@@ -5,16 +5,14 @@ import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.TimePickerDialog;
-import android.content.ContentResolver;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.util.Log;
 import android.view.View;
-import android.webkit.MimeTypeMap;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -32,6 +30,7 @@ import androidx.core.content.FileProvider;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.google.android.material.textfield.TextInputEditText;
 import com.hungdt.waterplan.KEY;
 import com.hungdt.waterplan.R;
@@ -51,6 +50,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 
@@ -61,20 +61,22 @@ public class AddPlanActivity extends AppCompatActivity {
     private TextView txtSave;
     private EditText edtPlanName, edtPlanNote;
     private RecyclerView rcvListCareSchedule;
-    private LinearLayout addCareSchedule;
+    private LinearLayout addRemind;
 
     private RemindAdapter remindAdapter;
 
     private Plant plant;
     private List<String> checkRemind = new ArrayList<>();
+    private List<Remind> saveRemind = new ArrayList<>();
     private List<Remind> reminds = new ArrayList<>();
 
     final Calendar calendar = Calendar.getInstance();
 
     private static final int CAMERA_PERMISSION_CODE = 200;
-    private static final int CAMERA_REQUEST_CODE = 201;
-    private static final int GALLERY_REQUEST_CODE = 202;
-    String currentPhotoPath;
+    private static final int GALLERY_PERMISSION_CODE = 201;
+    private static final int CAMERA_REQUEST_CODE = 202;
+    private static final int GALLERY_REQUEST_CODE = 203;
+    String currentPhotoPath = "";
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -88,19 +90,6 @@ public class AddPlanActivity extends AppCompatActivity {
                 this.getResources().getString(R.string.spray),
                 this.getResources().getString(R.string.prune)};
         checkRemind.addAll(Arrays.asList(listCheck));
-        if (reminds != null) {
-            for (int i = 0; i < reminds.size(); i++) {
-                if (reminds.get(i).getRemindType().equals(this.getResources().getString(R.string.water))) {
-                    checkRemind.remove(this.getResources().getString(R.string.water));
-                } else if (reminds.get(i).getRemindType().equals(this.getResources().getString(R.string.fertilize))) {
-                    checkRemind.remove(this.getResources().getString(R.string.fertilize));
-                } else if (reminds.get(i).getRemindType().equals(this.getResources().getString(R.string.spray))) {
-                    checkRemind.remove(this.getResources().getString(R.string.spray));
-                } else {
-                    checkRemind.remove(this.getResources().getString(R.string.prune));
-                }
-            }
-        }
 
         Intent intent = getIntent();
         final String type = intent.getStringExtra(KEY.TYPE);
@@ -109,15 +98,43 @@ public class AddPlanActivity extends AppCompatActivity {
             imgDeletePlant.setVisibility(View.GONE);
         } else if (type.equals(KEY.TYPE_EDIT)) {
             plant = (Plant) intent.getSerializableExtra(KEY.PLANT);
-            assert plant != null;
-            reminds = plant.getReminds();
-            edtPlanName.setText(plant.getPlantName());
-            edtPlanNote.setText(plant.getPlantNote());
+            if (plant != null) {
+                saveRemind.addAll(plant.getReminds());
+                reminds.addAll(plant.getReminds());
+                edtPlanName.setText(plant.getPlantName());
+                edtPlanNote.setText(plant.getPlantNote());
+                if (!plant.getPlantImage().equals("")) {
+                    currentPhotoPath = plant.getPlantImage();
+                    Glide
+                            .with(this)
+                            .load(plant.getPlantImage())
+                            .placeholder(R.drawable.tree_default)
+                            .into(imgPlantAvatar);
+                }
+            }
+        }
+        if (reminds != null) {
+            for (int i = 0; i < reminds.size(); i++) {
+                if (reminds.get(i).getRemindType().equals(this.getResources().getString(R.string.water))) {
+                    checkRemind.remove(this.getResources().getString(R.string.water));
+                }
+                if (reminds.get(i).getRemindType().equals(this.getResources().getString(R.string.fertilize))) {
+                    checkRemind.remove(this.getResources().getString(R.string.fertilize));
+                }
+                if (reminds.get(i).getRemindType().equals(this.getResources().getString(R.string.spray))) {
+                    checkRemind.remove(this.getResources().getString(R.string.spray));
+                }
+                if (reminds.get(i).getRemindType().equals(this.getResources().getString(R.string.prune))) {
+                    checkRemind.remove(this.getResources().getString(R.string.prune));
+                }
+            }
+            if(checkRemind.size()==0){
+                addRemind.setVisibility(View.GONE);
+            }
         }
         remindAdapter = new RemindAdapter(this, reminds);
         rcvListCareSchedule.setLayoutManager(new LinearLayoutManager(this));
         rcvListCareSchedule.setAdapter(remindAdapter);
-
 
         imgBack.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -142,61 +159,111 @@ public class AddPlanActivity extends AppCompatActivity {
                 } else {
                     if (type.equals(KEY.TYPE_CREATE)) {
                         if (edtPlanNote.getText().toString().isEmpty()) {
-                            DBHelper.getInstance(AddPlanActivity.this).addPlan(edtPlanName.getText().toString(), "", "");
+                            DBHelper.getInstance(AddPlanActivity.this).addPlan(edtPlanName.getText().toString(), currentPhotoPath, "");
                         } else {
-                            DBHelper.getInstance(AddPlanActivity.this).addPlan(edtPlanName.getText().toString(), "", edtPlanNote.getText().toString());
+                            DBHelper.getInstance(AddPlanActivity.this).addPlan(edtPlanName.getText().toString(), currentPhotoPath, edtPlanNote.getText().toString());
                         }
                         if (reminds != null) {
                             String plantID = DBHelper.getInstance(AddPlanActivity.this).getLastPlanID();
                             for (int i = 0; i < reminds.size(); i++) {
                                 Remind remind = reminds.get(i);
-                                DBHelper.getInstance(AddPlanActivity.this).addRemind(plantID, remind.getRemindType(), remind.getRemindDate(), remind.getRemindTime(), remind.getCareCycle());
+                                DBHelper.getInstance(AddPlanActivity.this).addRemind(plantID, remind.getRemindType(), remind.getRemindCreateDT(),remind.getRemindTime(), remind.getCareCycle());
                             }
                             reminds.clear();
                         }
+                        Intent resultIntent = new Intent();
+                        resultIntent.putExtra(KEY.TYPE_RESULT, KEY.CREATE);
+                        setResult(Activity.RESULT_OK, resultIntent);
                     }
                     if (type.equals(KEY.TYPE_EDIT)) {
                         if (edtPlanNote.getText().toString().isEmpty()) {
-                            DBHelper.getInstance(AddPlanActivity.this).updatePlan(plant.getPlantID(), edtPlanName.getText().toString(), "", "");
+                            DBHelper.getInstance(AddPlanActivity.this).updatePlan(plant.getPlantID(), edtPlanName.getText().toString(), currentPhotoPath, "");
                         } else {
-                            DBHelper.getInstance(AddPlanActivity.this).updatePlan(plant.getPlantID(), edtPlanName.getText().toString(), "", edtPlanNote.getText().toString());
+                            DBHelper.getInstance(AddPlanActivity.this).updatePlan(plant.getPlantID(), edtPlanName.getText().toString(), currentPhotoPath, edtPlanNote.getText().toString());
                         }
-                        DBHelper.getInstance(AddPlanActivity.this).deletePlanRemind(plant.getPlantID());
-                        if (reminds != null) {
-                            for (int i = 0; i < reminds.size(); i++) {
-                                Remind remind = reminds.get(i);
-                                DBHelper.getInstance(AddPlanActivity.this).addRemind(plant.getPlantID(), remind.getRemindType(), remind.getRemindDate(), remind.getRemindTime(), remind.getCareCycle());
+                        //todo
+                        if (reminds.size() == 0) {
+                            DBHelper.getInstance(AddPlanActivity.this).deletePlanRemind(plant.getPlantID());
+                        }
+                        //chưa clear list! trong database ok!
+                        else {
+                            if (saveRemind.size() == 0) {
+                                for (int i = 0; i < reminds.size(); i++) {
+                                    DBHelper.getInstance(AddPlanActivity.this)
+                                            .addRemind(plant.getPlantID(),
+                                                    reminds.get(i).getRemindType(),
+                                                    reminds.get(i).getRemindCreateDT(),
+                                                    reminds.get(i).getRemindTime(),
+                                                    reminds.get(i).getCareCycle());
+                                }
+                            } else {
+                                List<String> idSave = new ArrayList<>();
+                                for (int i = 0; i < saveRemind.size(); i++) {
+                                    idSave.add(saveRemind.get(i).getRemindID());
+                                }
 
+                                for (int i = 0; i < reminds.size(); i++) {
+                                    boolean check = true;
+                                    for (int j = 0; j < saveRemind.size(); j++) {
+                                        if (reminds.get(i).getRemindType().equals(saveRemind.get(j).getRemindType())) {
+                                            //nếu trùng thì update
+                                            DBHelper.getInstance(AddPlanActivity.this)
+                                                    .updateRemind(reminds.get(i).getRemindID(),
+                                                            reminds.get(i).getRemindCreateDT(),
+                                                            reminds.get(i).getRemindTime(),
+                                                            reminds.get(i).getCareCycle());
+                                            String id = saveRemind.get(j).getRemindID();
+                                            idSave.remove(id);
+                                            check = false;
+                                        }
+                                    }
+                                    if (check) {
+                                        // khác thì add
+                                        DBHelper.getInstance(AddPlanActivity.this)
+                                                .addRemind(plant.getPlantID(),
+                                                        reminds.get(i).getRemindType(),
+                                                        reminds.get(i).getRemindCreateDT(),
+                                                        reminds.get(i).getRemindTime(),
+                                                        reminds.get(i).getCareCycle());
+                                    }
+                                }
+                                if (idSave.size() > 0) {
+                                    //xóa bỏ nếu đã xóa khỏi danh sách
+                                    for (int i = 0; i < idSave.size(); i++) {
+                                        DBHelper.getInstance(AddPlanActivity.this).deleteOneRemind(idSave.get(i));
+                                    }
+                                }
                             }
+                            saveRemind.clear();
                             reminds.clear();
                         }
+                        Intent resultIntent = new Intent();
+                        resultIntent.putExtra(KEY.TYPE_RESULT, KEY.UPDATE);
+                        setResult(Activity.RESULT_OK, resultIntent);
                     }
-                    //Xay ra van de khi back ko co du lieu.// tu dong add phan tu cuoi. RESULT_CANCELED nguy hiem!
-                    //Camera per va hoi progress bar time notifi
-                    Intent returnIntent = new Intent();
-                    setResult(Activity.RESULT_CANCELED, returnIntent);
                     finish();
                 }
             }
         });
 
+
         imgCamera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                askPermissions();
-
+                String typePermission = "camera";
+                askPermissions(typePermission);
             }
         });
 
         imgGallery.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent galleryIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-                startActivityForResult(galleryIntent, GALLERY_REQUEST_CODE);
+                String typePermission = "gallery";
+                askPermissions(typePermission);
             }
         });
 
-        addCareSchedule.setOnClickListener(new View.OnClickListener() {
+        addRemind.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 openChoseTypeDialog();
@@ -214,26 +281,42 @@ public class AddPlanActivity extends AppCompatActivity {
                 checkRemind.add(reminds.get(position).getRemindType());
                 reminds.remove(position);
                 remindAdapter.notifyDataSetChanged();
-                addCareSchedule.setVisibility(View.VISIBLE);
+                addRemind.setVisibility(View.VISIBLE);
             }
         });
     }
 
-    private void askPermissions() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_CODE);
-        } else {
-            dispatchTakePictureIntent();
+    private void askPermissions(String typePermission) {
+        if (typePermission.equals("camera")) {
+            if ((ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) ||
+                    (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) ||
+                    (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA, Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, CAMERA_PERMISSION_CODE);
+            } else {
+                dispatchTakePictureIntent();
+            }
         }
+        if (typePermission.equals("gallery")) {
+            if ((ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) ||
+                    (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)) {
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, GALLERY_PERMISSION_CODE);
+            } else {
+                Intent galleryIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+                startActivityForResult(galleryIntent, GALLERY_REQUEST_CODE);
+            }
+
+        }
+
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        //super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            dispatchTakePictureIntent();
-        } else {
-            Toast.makeText(this, "...", Toast.LENGTH_SHORT).show();
+        if (requestCode == CAMERA_PERMISSION_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                dispatchTakePictureIntent();
+            } else {
+
+            }
         }
     }
 
@@ -244,19 +327,28 @@ public class AddPlanActivity extends AppCompatActivity {
             if (resultCode == Activity.RESULT_OK) {
                 File f = new File(currentPhotoPath);
                 imgPlantAvatar.setImageURI(Uri.fromFile(f));
-                //Gallery
+                //
                 Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
                 Uri contentUri = Uri.fromFile(f);
                 mediaScanIntent.setData(contentUri);
                 this.sendBroadcast(mediaScanIntent);
             }
         }
+
         if (requestCode == GALLERY_REQUEST_CODE) {
             if (resultCode == Activity.RESULT_OK) {
-                assert data != null;
-                Uri contentUri = data.getData();
-                @SuppressLint("SimpleDateFormat") String timeStamp = new SimpleDateFormat("HH:mm-dd/MM/yyyy").format(new Date());
-                imgPlantAvatar.setImageURI(contentUri);
+                Uri uri = data.getData();
+                String[] filePathColumn = {MediaStore.Images.Media.DATA};
+                Cursor cursor = getContentResolver().query(uri, filePathColumn, null, null, null);
+                while (cursor.moveToNext()) {
+                    int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+                    String yourRealPath = cursor.getString(columnIndex);
+                    currentPhotoPath = yourRealPath;
+                    Glide.with(this).load(currentPhotoPath).placeholder(R.drawable.tree_default).into(imgPlantAvatar);
+                }
+                cursor.close();
+
+
             }
         }
     }
@@ -264,7 +356,7 @@ public class AddPlanActivity extends AppCompatActivity {
 
     private File createImageFile() throws IOException {
         // Create an image file name
-        @SuppressLint("SimpleDateFormat") String timeStamp = new SimpleDateFormat("HH:mm-dd/MM/yyyy").format(new Date());
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String imageFileName = "JPEG_" + timeStamp + "_";
         //File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
@@ -288,7 +380,7 @@ public class AddPlanActivity extends AppCompatActivity {
             try {
                 photoFile = createImageFile();
             } catch (IOException ex) {
-                // Error occurred while creating the File
+
             }
             // Continue only if the File was successfully created
             if (photoFile != null) {
@@ -313,11 +405,11 @@ public class AddPlanActivity extends AppCompatActivity {
             public void onClick(View view) {
                 DBHelper.getInstance(AddPlanActivity.this).deletePlan(plant.getPlantID());
                 if (reminds.size() > 0) {
-                    Log.e("123", "size: " + reminds.size());
                     DBHelper.getInstance(AddPlanActivity.this).deletePlanRemind(plant.getPlantID());
                 }
-                Intent returnIntent = new Intent();
-                setResult(Activity.RESULT_OK, returnIntent);
+                Intent resultIntent = new Intent();
+                resultIntent.putExtra(KEY.TYPE_RESULT, KEY.DELETE);
+                setResult(Activity.RESULT_OK, resultIntent);
                 dialog.dismiss();
                 finish();
             }
@@ -359,9 +451,9 @@ public class AddPlanActivity extends AppCompatActivity {
             public void onClick(View v) {
                 checkRemind.remove(dialog.getContext().getResources().getString(R.string.water));
                 if (checkRemind.size() == 0) {
-                    addCareSchedule.setVisibility(View.GONE);
+                    addRemind.setVisibility(View.GONE);
                 }
-                reminds.add(new Remind("0", dialog.getContext().getResources().getString(R.string.water), getInstantDay(), "07:00", "5"));
+                reminds.add(new Remind("0", dialog.getContext().getResources().getString(R.string.water), getInstantDateTime(),"07:00","5"));
                 remindAdapter.notifyDataSetChanged();
                 dialog.dismiss();
 
@@ -373,9 +465,9 @@ public class AddPlanActivity extends AppCompatActivity {
             public void onClick(View v) {
                 checkRemind.remove(dialog.getContext().getResources().getString(R.string.fertilize));
                 if (checkRemind.size() == 0) {
-                    addCareSchedule.setVisibility(View.GONE);
+                    addRemind.setVisibility(View.GONE);
                 }
-                reminds.add(new Remind("1", dialog.getContext().getResources().getString(R.string.fertilize), getInstantDay(), "07:00", "5"));
+                reminds.add(new Remind("1", dialog.getContext().getResources().getString(R.string.fertilize), getInstantDateTime(),"07:00", "5"));
                 remindAdapter.notifyDataSetChanged();
                 dialog.dismiss();
             }
@@ -386,9 +478,9 @@ public class AddPlanActivity extends AppCompatActivity {
             public void onClick(View v) {
                 checkRemind.remove(dialog.getContext().getResources().getString(R.string.spray));
                 if (checkRemind.size() == 0) {
-                    addCareSchedule.setVisibility(View.GONE);
+                    addRemind.setVisibility(View.GONE);
                 }
-                reminds.add(new Remind("2", dialog.getContext().getResources().getString(R.string.spray), getInstantDay(), "07:00", "5"));
+                reminds.add(new Remind("2", dialog.getContext().getResources().getString(R.string.spray), getInstantDateTime(),"07:00", "5"));
                 remindAdapter.notifyDataSetChanged();
                 dialog.dismiss();
             }
@@ -399,9 +491,9 @@ public class AddPlanActivity extends AppCompatActivity {
             public void onClick(View v) {
                 checkRemind.remove(dialog.getContext().getResources().getString(R.string.prune));
                 if (checkRemind.size() == 0) {
-                    addCareSchedule.setVisibility(View.GONE);
+                    addRemind.setVisibility(View.GONE);
                 }
-                reminds.add(new Remind("3", dialog.getContext().getResources().getString(R.string.prune), getInstantDay(), "07:00", "5"));
+                reminds.add(new Remind("3", dialog.getContext().getResources().getString(R.string.prune), getInstantDateTime(),"07:00", "5"));
                 remindAdapter.notifyDataSetChanged();
                 dialog.dismiss();
             }
@@ -440,10 +532,10 @@ public class AddPlanActivity extends AppCompatActivity {
         btnEdit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (edtRemindDay.getText().toString().isEmpty() || edtRemindTime.getText().toString().isEmpty()) {
+                if (Objects.requireNonNull(edtRemindDay.getText()).toString().isEmpty() || Objects.requireNonNull(edtRemindTime.getText()).toString().isEmpty()) {
                     Toast.makeText(AddPlanActivity.this, "Please enter all title!", Toast.LENGTH_SHORT).show();
                 } else {
-                    Remind remindEdited = new Remind(remind.getRemindID(), remind.getRemindType(), remind.getRemindDate(), edtRemindTime.getText().toString(), edtRemindDay.getText().toString());
+                    Remind remindEdited = new Remind(remind.getRemindID(), remind.getRemindType(), remind.getRemindCreateDT(), edtRemindTime.getText().toString(), edtRemindDay.getText().toString());
                     reminds.set(position, remindEdited);
                     remindAdapter.notifyItemChanged(position);
                     dialog.dismiss();
@@ -482,8 +574,8 @@ public class AddPlanActivity extends AppCompatActivity {
         timePickerDialog.show();
     }
 
-    private String getInstantDay() {
-        SimpleDateFormat sdf = new SimpleDateFormat(Constant.getDateFormat(), Locale.US);
+    private String getInstantDateTime() {
+        SimpleDateFormat sdf = new SimpleDateFormat(Constant.getDateTimeFormat(), Locale.US);
         return sdf.format(calendar.getTime());
     }
 
@@ -497,6 +589,6 @@ public class AddPlanActivity extends AppCompatActivity {
         edtPlanName = findViewById(R.id.edtPlanName);
         edtPlanNote = findViewById(R.id.edtPlanNote);
         rcvListCareSchedule = findViewById(R.id.rcvListCareSchedule);
-        addCareSchedule = findViewById(R.id.addCareSchedule);
+        addRemind = findViewById(R.id.addCareSchedule);
     }
 }

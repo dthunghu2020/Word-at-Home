@@ -18,7 +18,7 @@
             android:id="@+id/llWater"
             android:layout_width="@dimen/_80sdp"
             android:layout_height="@dimen/_80sdp"
-            android:background="#BA3AE1F6"
+            android:background="@color/colorWater"
             android:gravity="center"
             android:orientation="vertical">
 
@@ -41,7 +41,7 @@
             android:id="@+id/llFertilizer"
             android:layout_width="@dimen/_80sdp"
             android:layout_height="@dimen/_80sdp"
-            android:background="#9c5518"
+            android:background="@color/colorFertilizer"
             android:gravity="center"
             android:orientation="vertical">
 
@@ -72,7 +72,7 @@
             android:layout_margin="@dimen/_5sdp"
             android:layout_width="@dimen/_80sdp"
             android:layout_height="@dimen/_80sdp"
-            android:background="#84A9AC"
+            android:background="@color/colorSpray"
             android:gravity="center"
             android:orientation="vertical">
 
@@ -95,7 +95,7 @@
             android:id="@+id/llPrune"
             android:layout_width="@dimen/_80sdp"
             android:layout_height="@dimen/_80sdp"
-            android:background="#7F78D2"
+            android:background="@color/colorPrune"
             android:gravity="center"
             android:orientation="vertical">
 

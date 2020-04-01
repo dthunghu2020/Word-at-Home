@@ -9,6 +9,7 @@ public class Plant implements Serializable {
     private String plantName;
     private String plantNote;
     private List<Remind> reminds;
+    private boolean isTicked = false;
 
     public Plant(String plantID, String plantImage, String plantName, String plantNote, List<Remind> reminds) {
         this.plantID = plantID;
@@ -56,5 +57,13 @@ public class Plant implements Serializable {
 
     public void setReminds(List<Remind> reminds) {
         this.reminds = reminds;
+    }
+
+    public boolean isTicked() {
+        return isTicked;
+    }
+
+    public void setTicked(boolean ticked) {
+        isTicked = ticked;
     }
 }

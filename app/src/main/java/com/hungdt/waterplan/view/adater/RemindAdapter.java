@@ -41,13 +41,6 @@ public class RemindAdapter extends RecyclerView.Adapter<RemindAdapter.RemindHold
     public void onBindViewHolder(@NonNull final RemindHolder holder, final int position) {
         Remind remind = reminds.get(position);
 
-        holder.imgDelete.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //todo
-            }
-        });
-
         if(remind.getRemindType().equals(layoutInflater.getContext().getResources().getString(R.string.water))){
             holder.llDate.setBackgroundColor(layoutInflater.getContext().getResources().getColor(R.color.colorWater));
             holder.txtTime.setBackgroundColor(layoutInflater.getContext().getResources().getColor(R.color.colorWater));
