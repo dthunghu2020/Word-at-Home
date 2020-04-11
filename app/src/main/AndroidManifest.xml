@@ -5,7 +5,8 @@
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
-
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="com.android.vending.BILLING" />
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -21,6 +22,18 @@
             </intent-filter>
         </activity>
         <activity android:name=".view.AddPlanActivity" />
+        <activity android:name=".view.SettingActivity" />
+        <activity
+            android:name=".view.PolicyActivity"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait" />
+        <activity android:name=".view.RateAppActivity"
+            android:launchMode="singleTask"
+            android:noHistory="true"
+            android:screenOrientation="unspecified"
+            android:theme="@style/Theme.AppCompat.Translucent" />
+        <activity android:name=".view.VipActivity" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.hungdt.android.fileprovider"

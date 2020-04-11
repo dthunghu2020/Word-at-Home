@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    android:gravity="center"
+    android:orientation="vertical"
+    xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
+    android:layout_height="@dimen/_250sdp">
+    <ImageView
+        android:id="@+id/imgImagesVD"
+        android:layout_width="@dimen/_100sdp"
+        android:layout_height="@dimen/_100sdp"
+        android:layout_marginTop="@dimen/_10sdp"
+        android:background="@drawable/ic_feature" />
+
+    <TextView
+        android:id="@+id/txtTitle1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_10sdp"
+        android:text="Get all feature"
+        android:textColor="@color/green"
+        android:textSize="@dimen/_20sdp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/txtTitle2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Once and Forever"
+        android:textColor="@color/green"
+        android:textSize="@dimen/_20sdp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/txtDes1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_10sdp"
+        android:text="Pay for once to use all feature"
+        android:textSize="@dimen/_14sdp" />
+
+    <TextView
+        android:id="@+id/txtDes2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/_5sdp"
+        android:text="No more blocked feature"
+        android:textSize="@dimen/_14sdp" />
+</LinearLayout>
