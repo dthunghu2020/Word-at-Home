@@ -13,7 +13,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
@@ -338,7 +340,7 @@ public class AddPlanActivity extends AppCompatActivity {
             public void onClick(View view) {
                 if (existEvent1) {
                     openEventDialog(1, KEY.UPDATE);
-                }else {
+                } else {
                     openEventDialog(1, KEY.CREATE);
                 }
             }
@@ -349,7 +351,7 @@ public class AddPlanActivity extends AppCompatActivity {
             public void onClick(View view) {
                 if (existEvent2) {
                     openEventDialog(2, KEY.UPDATE);
-                }else {
+                } else {
                     openEventDialog(2, KEY.CREATE);
                 }
             }
@@ -512,7 +514,7 @@ public class AddPlanActivity extends AppCompatActivity {
             }
         });
 
-
+        //Click chụp ảnh
         imgCamera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -531,6 +533,7 @@ public class AddPlanActivity extends AppCompatActivity {
 
 
     }
+
 
     private void invisibleRemindData() {
         llWater.setVisibility(View.INVISIBLE);
@@ -687,43 +690,39 @@ public class AddPlanActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    private void openEventDialog(final int position, final String type) {
+    private void openEventDialog(final int eventPosition, final String type) {
         final BottomSheetDialog bottomSheetDialog = new BottomSheetDialog(AddPlanActivity.this);
         bottomSheetDialog.setContentView(R.layout.event_dialog);
 
         ImageView imgDeleteEvent = bottomSheetDialog.findViewById(R.id.imgDeleteEvent);
         final EditText edtEventDate = bottomSheetDialog.findViewById(R.id.edtEventDate);
         final EditText edtEventName = bottomSheetDialog.findViewById(R.id.edtEventName);
-        final Spinner spinnerEvent = bottomSheetDialog.findViewById(R.id.edtRemindDay);
+        final Spinner spinnerEvent = bottomSheetDialog.findViewById(R.id.spinnerEvent);
         Button btnOk = bottomSheetDialog.findViewById(R.id.btnOk);
         Button btnCancel = bottomSheetDialog.findViewById(R.id.btnCancel);
 
+        spinnerEvent.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                    //edtEventName.setText(events.get(position).getEventName());
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+            }
+        });
 
         if (type.equals(KEY.CREATE)) {
             imgDeleteEvent.setVisibility(View.GONE);
         } else if (type.equals(KEY.UPDATE)) {
             for (int i = 0; i < events.size(); i++) {
-                if (events.get(i).getEventPosition().equals(String.valueOf(position))) {
+                if (events.get(i).getEventPosition().equals(String.valueOf(eventPosition))) {
                     edtEventName.setText(events.get(i).getEventName());
                     edtEventDate.setText(events.get(i).getEventDate());
                 }
             }
         }
-
-
-        //todo Spinner
-        /*final String[] eventArray = getResources().getStringArray(R.array.Spinner_event_name);
-
-        spinnerEvent.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                edtEventName.setText(eventArray[position]);
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
-        });*/
 
         @SuppressLint("SimpleDateFormat") final SimpleDateFormat sdfDate = new SimpleDateFormat(Constant.getDateFormat());
         @SuppressLint("SimpleDateFormat") final SimpleDateFormat sdfDateTime = new SimpleDateFormat(Constant.getDateTimeFormat());
@@ -780,20 +779,20 @@ public class AddPlanActivity extends AppCompatActivity {
                     Toast.makeText(AddPlanActivity.this, "Please enter all title!", Toast.LENGTH_SHORT).show();
                 } else {
                     if (type.equals(KEY.CREATE)) {
-                        events.add(new Event(String.valueOf(position), edtEventName.getText().toString(), edtEventDate.getText().toString(), String.valueOf(position)));
+                        events.add(new Event(String.valueOf(eventPosition), edtEventName.getText().toString(), edtEventDate.getText().toString(), String.valueOf(eventPosition)));
                     } else if (type.equals(KEY.UPDATE)) {
                         String idEvent = "";
                         for (int i = 0; i < events.size(); i++) {
-                            if (events.get(i).getEventPosition().equals(String.valueOf(position)))
+                            if (events.get(i).getEventPosition().equals(String.valueOf(eventPosition)))
                                 idEvent = events.get(i).getEventId();
                         }
-                        Event eventEdited = new Event(idEvent, edtEventName.getText().toString(), edtEventDate.getText().toString(), String.valueOf(position));
+                        Event eventEdited = new Event(idEvent, edtEventName.getText().toString(), edtEventDate.getText().toString(), String.valueOf(eventPosition));
                         for (int i = 0; i < events.size(); i++) {
-                            if (events.get(i).getEventPosition().equals(String.valueOf(position)))
+                            if (events.get(i).getEventPosition().equals(String.valueOf(eventPosition)))
                                 events.set(i, eventEdited);
                         }
                     }
-                    if (position == 1) {
+                    if (eventPosition == 1) {
                         flag1.setVisibility(View.INVISIBLE);
                         txtEvent1.setVisibility(View.VISIBLE);
                         txtEventDay1.setVisibility(View.VISIBLE);
@@ -801,7 +800,7 @@ public class AddPlanActivity extends AppCompatActivity {
                         txtEventDay1.setText(edtEventDate.getText().toString());
                         existEvent1 = true;
                     }
-                    if (position == 2) {
+                    if (eventPosition == 2) {
                         flag2.setVisibility(View.INVISIBLE);
                         txtEvent2.setVisibility(View.VISIBLE);
                         txtEventDay2.setVisibility(View.VISIBLE);
@@ -809,7 +808,7 @@ public class AddPlanActivity extends AppCompatActivity {
                         txtEventDay2.setText(edtEventDate.getText().toString());
                         existEvent2 = true;
                     }
-                    if (position == 3) {
+                    if (eventPosition == 3) {
                         flag3.setVisibility(View.INVISIBLE);
                         txtEvent3.setVisibility(View.VISIBLE);
                         txtEventDay3.setVisibility(View.VISIBLE);
@@ -834,22 +833,22 @@ public class AddPlanActivity extends AppCompatActivity {
             public void onClick(View view) {
                 int positionDelete = 0;
                 for (int i = 0; i < events.size(); i++) {
-                    if (events.get(i).getEventPosition().equals(String.valueOf(position))) {
+                    if (events.get(i).getEventPosition().equals(String.valueOf(eventPosition))) {
                         positionDelete = i;
                     }
                 }
                 events.remove(positionDelete);
-                if (position == 1) {
+                if (eventPosition == 1) {
                     flag1.setVisibility(View.VISIBLE);
                     txtEvent1.setVisibility(View.INVISIBLE);
                     txtEventDay1.setVisibility(View.INVISIBLE);
                     existEvent1 = false;
-                } else if (position == 2) {
+                } else if (eventPosition == 2) {
                     flag2.setVisibility(View.VISIBLE);
                     txtEvent2.setVisibility(View.INVISIBLE);
                     txtEventDay2.setVisibility(View.INVISIBLE);
                     existEvent2 = false;
-                } else if (position == 3) {
+                } else if (eventPosition == 3) {
                     flag3.setVisibility(View.VISIBLE);
                     txtEvent3.setVisibility(View.INVISIBLE);
                     txtEventDay3.setVisibility(View.INVISIBLE);
