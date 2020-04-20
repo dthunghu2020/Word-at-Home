@@ -2,10 +2,10 @@ package com.hungdt.waterplan.view;
 
 import android.os.Bundle;
 import android.webkit.WebView;
-import android.widget.LinearLayout;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.hungdt.waterplan.Helper;
 import com.hungdt.waterplan.R;
 
 /*import com.icebear.newsdk.R;

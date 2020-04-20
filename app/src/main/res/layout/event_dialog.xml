@@ -72,12 +72,10 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-
             android:layout_height="wrap_content"
             android:background="@drawable/shape_background">
 
             <Spinner
-                android:entries="@array/Spinner_event_name"
                 android:id="@+id/spinnerEvent"
                 android:layout_width="@dimen/_35sdp"
                 android:layout_height="@dimen/_30sdp"
@@ -85,11 +83,12 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
+
             <EditText
                 android:id="@+id/edtEventName"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:background="@drawable/shape_background"
+                android:backgroundTint="#00000000"
                 android:padding="@dimen/_10sdp"
                 app:layout_constraintEnd_toStartOf="@+id/spinnerEvent"
                 app:layout_constraintStart_toStartOf="parent"

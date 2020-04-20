@@ -4,8 +4,10 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Switch;
 import android.widget.TextView;
@@ -13,18 +15,30 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.cardview.widget.CardView;
 
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdLoader;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.formats.NativeAdOptions;
+import com.google.android.gms.ads.formats.UnifiedNativeAd;
+import com.google.android.gms.ads.formats.UnifiedNativeAdView;
+import com.hungdt.waterplan.Helper;
 import com.hungdt.waterplan.KEY;
 import com.hungdt.waterplan.R;
 import com.hungdt.waterplan.database.DBHelper;
 
 public class SettingActivity extends AppCompatActivity implements CompoundButton.OnCheckedChangeListener {
     private Switch aSwitch;
-    private TextView btnSaveName, txtRate, txtFeedback, txtShare, txtPolicy;
+    private TextView  txtRate, txtFeedback, txtShare, txtPolicy;
+    private CardView btnSaveName;
     private EditText edtUserName;
     private ImageView imgBack;
 
     String userName;
+
+    private UnifiedNativeAd nativeAd;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -33,6 +47,10 @@ public class SettingActivity extends AppCompatActivity implements CompoundButton
         Helper.setColorStatusBar(this, R.color.status_bar);
 
         initView();
+
+        //Native
+        MobileAds.initialize(this, "ca-app-pub-3940256099942544/2247696110");
+        refreshAd();
 
         userName = DBHelper.getInstance(this).getUserName();
         edtUserName.setText(userName);
@@ -90,9 +108,9 @@ public class SettingActivity extends AppCompatActivity implements CompoundButton
             }
         });
 
-        if (DBHelper.getInstance(this).getPermission().equals("Off")) {
+        if (DBHelper.getInstance(this).getRemindNotification().equals("Off")) {
             aSwitch.setChecked(false);
-        } else if (DBHelper.getInstance(this).getPermission().equals("On")) {
+        } else if (DBHelper.getInstance(this).getRemindNotification().equals("On")) {
             aSwitch.setChecked(true);
         }
 
@@ -122,6 +140,83 @@ public class SettingActivity extends AppCompatActivity implements CompoundButton
 
     }
 
+    private void refreshAd() {
+
+        AdLoader.Builder builder = new AdLoader.Builder(this, "ca-app-pub-3940256099942544/2247696110");
+        builder.forUnifiedNativeAd(new UnifiedNativeAd.OnUnifiedNativeAdLoadedListener() {
+            @Override
+            public void onUnifiedNativeAdLoaded(UnifiedNativeAd unifiedNativeAd) {
+                // You must call destroy on old ads when you are done with them,
+                // otherwise you will have a memory leak.
+                if (nativeAd != null) {
+                    nativeAd.destroy();
+                }
+                nativeAd = unifiedNativeAd;
+                FrameLayout frameLayout =
+                        findViewById(R.id.fl_adplaceholder);
+                UnifiedNativeAdView adView = (UnifiedNativeAdView) getLayoutInflater()
+                        .inflate(R.layout.ad_unified, null);
+                populateUnifiedNativeAdView(unifiedNativeAd, adView);
+                frameLayout.removeAllViews();
+                frameLayout.addView(adView);
+            }
+
+        });
+
+        NativeAdOptions adOptions = new NativeAdOptions.Builder().build();
+        builder.withNativeAdOptions(adOptions);
+
+        AdLoader adLoader = builder.withAdListener(new AdListener() {
+            @Override
+            public void onAdFailedToLoad(int errorCode) {
+                Toast.makeText(SettingActivity.this, "Failed to load native ad: "
+                        + errorCode, Toast.LENGTH_SHORT).show();
+            }
+        }).build();
+
+
+        adLoader.loadAd(new AdRequest.Builder().build());
+    }
+
+    private void populateUnifiedNativeAdView(UnifiedNativeAd nativeAd, UnifiedNativeAdView adView) {
+
+        // Set other ad assets.
+        adView.setHeadlineView(adView.findViewById(R.id.ad_headline));
+        adView.setBodyView(adView.findViewById(R.id.ad_body));
+        adView.setCallToActionView(adView.findViewById(R.id.ad_call_to_action));
+        adView.setIconView(adView.findViewById(R.id.ad_app_icon));
+
+        // The headline and mediaContent are guaranteed to be in every UnifiedNativeAd.
+        ((TextView) adView.getHeadlineView()).setText(nativeAd.getHeadline());
+        //adView.getMediaView().setMediaContent(nativeAd.getMediaContent());
+
+        // These assets aren't guaranteed to be in every UnifiedNativeAd, so it's important to
+        // check before trying to display them.
+        if (nativeAd.getBody() == null) {
+            adView.getBodyView().setVisibility(View.INVISIBLE);
+        } else {
+            adView.getBodyView().setVisibility(View.VISIBLE);
+            ((TextView) adView.getBodyView()).setText(nativeAd.getBody());
+        }
+
+        if (nativeAd.getCallToAction() == null) {
+            adView.getCallToActionView().setVisibility(View.INVISIBLE);
+        } else {
+            adView.getCallToActionView().setVisibility(View.VISIBLE);
+            ((Button) adView.getCallToActionView()).setText(nativeAd.getCallToAction());
+        }
+
+        if (nativeAd.getIcon() == null) {
+            adView.getIconView().setVisibility(View.GONE);
+        } else {
+            ((ImageView) adView.getIconView()).setImageDrawable(
+                    nativeAd.getIcon().getDrawable());
+            adView.getIconView().setVisibility(View.VISIBLE);
+        }
+
+        adView.setNativeAd(nativeAd);
+    }
+
     private void initView() {
         aSwitch = findViewById(R.id.swNotification);
         edtUserName = findViewById(R.id.edtUserName);
@@ -137,10 +232,10 @@ public class SettingActivity extends AppCompatActivity implements CompoundButton
     @Override
     public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
         if (aSwitch.isChecked()) {
-            DBHelper.getInstance(this).setPermission("Off", "On");
+            DBHelper.getInstance(this).setRemindNotification("Off", "On");
             Toast.makeText(this, "Notification is On", Toast.LENGTH_SHORT).show();
         } else {
-            DBHelper.getInstance(this).setPermission("On", "Off");
+            DBHelper.getInstance(this).setRemindNotification("On", "Off");
             Toast.makeText(this, "Notification is Off", Toast.LENGTH_SHORT).show();
         }
     }

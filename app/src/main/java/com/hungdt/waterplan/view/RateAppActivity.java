@@ -13,6 +13,8 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.hungdt.waterplan.Helper;
+import com.hungdt.waterplan.MySetting;
 import com.hungdt.waterplan.R;
 /*import com.icebear.newsdk.R;
 import com.icebear.newsdk.utils.Ads;

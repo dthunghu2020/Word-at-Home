@@ -22,14 +22,28 @@ import android.os.Bundle;
 import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.anjlab.android.iab.v3.BillingProcessor;
 import com.anjlab.android.iab.v3.TransactionDetails;
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdLoader;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.InterstitialAd;
+import com.google.android.gms.ads.MobileAds;
+import com.google.android.gms.ads.formats.NativeAdOptions;
+import com.google.android.gms.ads.formats.UnifiedNativeAd;
+import com.google.android.gms.ads.formats.UnifiedNativeAdView;
+import com.google.android.gms.ads.initialization.InitializationStatus;
+import com.google.android.gms.ads.initialization.OnInitializationCompleteListener;
 import com.google.android.material.navigation.NavigationView;
+import com.hungdt.waterplan.Helper;
 import com.hungdt.waterplan.KEY;
+import com.hungdt.waterplan.MySetting;
 import com.hungdt.waterplan.PlantWorker;
 import com.hungdt.waterplan.R;
 import com.hungdt.waterplan.database.DBHelper;
@@ -48,19 +62,17 @@ import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, BillingProcessor.IBillingHandler {
     private ConstraintLayout clWater, clFertilizer, clPrune, clSpray;
-    private TextView txtNumberWater, txtNumberPrune, txtNumberSpray, txtNumberFertilize, txtPruneNoti, txtWaterNoti, txtFertilizerNoti, txtSprayNoti;
-    private ImageView imgPlus;
+    private TextView txtUserName, txtNumberWater, txtNumberPrune, txtNumberSpray, txtNumberFertilize, txtPruneNoti, txtWaterNoti, txtFertilizerNoti, txtSprayNoti;
+    private ImageView imgPlus, imgMenu;
     private RecyclerView rcvPlan;
     private PlantAdapter plantAdapter;
-
-    private ImageView imgMenu;
     private DrawerLayout drawerLayout;
     private NavigationView navigationView;
-    private TextView txtUserName;
 
     private static final int REQUEST_CODE_ADD_PLANT = 100;
     private static final int REQUEST_CODE_EDIT_PLANT = 101;
     private static final int REQUEST_CODE_SETTING = 102;
+    private static final int REQUEST_CODE_VIP = 103;
 
     private int positionSave;
     private int numberWaterNoti = 0;
@@ -73,7 +85,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private List<Plant> plants = new ArrayList<>();
 
     private BillingProcessor bp;
+    private UnifiedNativeAd nativeAd;
+    private InterstitialAd mInterstitialAd;
+
     private boolean readyToPurchase = false;
+    private boolean openVipActivity = false;
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -84,7 +100,38 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         initView();
 
-        //new
+        MobileAds.initialize(this, new OnInitializationCompleteListener() {
+            @Override
+            public void onInitializationComplete(InitializationStatus initializationStatus) {
+            }
+        });
+
+
+        //Native
+        MobileAds.initialize(this, "ca-app-pub-3940256099942544/2247696110");
+        refreshAd();
+
+        //Inter
+        mInterstitialAd = new InterstitialAd(this);
+        mInterstitialAd.setAdUnitId("ca-app-pub-3940256099942544/1033173712");
+        mInterstitialAd.loadAd(new AdRequest.Builder().build());
+        mInterstitialAd.setAdListener(new AdListener() {
+            @Override
+            public void onAdClosed() {
+                // Code to be executed when the interstitial ad is closed.
+                mInterstitialAd.loadAd(new AdRequest.Builder().build());
+            }
+        });
+
+        //Mo man VIP
+        if (!openVipActivity) {
+            Intent intent = new Intent(this, VipActivity.class);
+            startActivityForResult(intent, REQUEST_CODE_VIP);
+            openVipActivity = true;
+        }
+
+
+        //Chuc nang
         try {
             bp = BillingProcessor.newBillingProcessor(this, getString(R.string.BASE64), this); // doesn't bind
             bp.initialize(); // binds
@@ -95,7 +142,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         String checkUserData = DBHelper.getInstance(this).getUserName();
         if (checkUserData.isEmpty()) {
-            DBHelper.getInstance(this).createUserData("Planter", "On");
+            DBHelper.getInstance(this).createUserData("Planter", "On", "On");
         }
         //Notification
         Data data = new Data.Builder()
@@ -156,7 +203,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             @Override
             public void onClick(View v) {
                 if (typeOfCare.equals(KEY.TYPE_CREATE)) {
-                    Intent intent = new Intent(MainActivity.this, AddPlanActivity.class);
+                    Intent intent = new Intent(MainActivity.this, EditPlanActivity.class);
                     intent.putExtra(KEY.TYPE, KEY.TYPE_CREATE);
                     startActivityForResult(intent, REQUEST_CODE_ADD_PLANT);
                     setNotiView();
@@ -262,7 +309,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 if (!checkBox) {
                     positionSave = position;
                     Bundle bundle = new Bundle();
-                    Intent intent = new Intent(MainActivity.this, AddPlanActivity.class);
+                    Intent intent = new Intent(MainActivity.this, EditPlanActivity.class);
                     bundle.putSerializable(KEY.PLANT, plants.get(position));
                     intent.putExtra(KEY.TYPE, KEY.TYPE_EDIT);
                     intent.putExtras(bundle);
@@ -272,12 +319,89 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         });
     }
 
+    private void populateUnifiedNativeAdView(UnifiedNativeAd nativeAd, UnifiedNativeAdView adView) {
+
+        // Set other ad assets.
+        adView.setHeadlineView(adView.findViewById(R.id.ad_headline));
+        adView.setBodyView(adView.findViewById(R.id.ad_body));
+        adView.setCallToActionView(adView.findViewById(R.id.ad_call_to_action));
+        adView.setIconView(adView.findViewById(R.id.ad_app_icon));
+
+        // The headline and mediaContent are guaranteed to be in every UnifiedNativeAd.
+        ((TextView) adView.getHeadlineView()).setText(nativeAd.getHeadline());
+        //adView.getMediaView().setMediaContent(nativeAd.getMediaContent());
+
+        // These assets aren't guaranteed to be in every UnifiedNativeAd, so it's important to
+        // check before trying to display them.
+        if (nativeAd.getBody() == null) {
+            adView.getBodyView().setVisibility(View.INVISIBLE);
+        } else {
+            adView.getBodyView().setVisibility(View.VISIBLE);
+            ((TextView) adView.getBodyView()).setText(nativeAd.getBody());
+        }
+
+        if (nativeAd.getCallToAction() == null) {
+            adView.getCallToActionView().setVisibility(View.INVISIBLE);
+        } else {
+            adView.getCallToActionView().setVisibility(View.VISIBLE);
+            ((Button) adView.getCallToActionView()).setText(nativeAd.getCallToAction());
+        }
+
+        if (nativeAd.getIcon() == null) {
+            adView.getIconView().setVisibility(View.GONE);
+        } else {
+            ((ImageView) adView.getIconView()).setImageDrawable(
+                    nativeAd.getIcon().getDrawable());
+            adView.getIconView().setVisibility(View.VISIBLE);
+        }
+
+        adView.setNativeAd(nativeAd);
+    }
+
+    private void refreshAd() {
+
+        AdLoader.Builder builder = new AdLoader.Builder(this, "ca-app-pub-3940256099942544/2247696110");
+        builder.forUnifiedNativeAd(new UnifiedNativeAd.OnUnifiedNativeAdLoadedListener() {
+            @Override
+            public void onUnifiedNativeAdLoaded(UnifiedNativeAd unifiedNativeAd) {
+                // You must call destroy on old ads when you are done with them,
+                // otherwise you will have a memory leak.
+                if (nativeAd != null) {
+                    nativeAd.destroy();
+                }
+                nativeAd = unifiedNativeAd;
+                FrameLayout frameLayout =
+                        findViewById(R.id.fl_adplaceholder);
+                UnifiedNativeAdView adView = (UnifiedNativeAdView) getLayoutInflater()
+                        .inflate(R.layout.ad_unified, null);
+                populateUnifiedNativeAdView(unifiedNativeAd, adView);
+                frameLayout.removeAllViews();
+                frameLayout.addView(adView);
+            }
+
+        });
+
+        NativeAdOptions adOptions = new NativeAdOptions.Builder().build();
+        builder.withNativeAdOptions(adOptions);
+
+        AdLoader adLoader = builder.withAdListener(new AdListener() {
+            @Override
+            public void onAdFailedToLoad(int errorCode) {
+                Toast.makeText(MainActivity.this, "Failed to load native ad: "
+                        + errorCode, Toast.LENGTH_SHORT).show();
+            }
+        }).build();
+
+
+        adLoader.loadAd(new AdRequest.Builder().build());
+    }
+
     @SuppressLint("SetTextI18n")
     private void setNotiView() {
-        numberFetilizerNoti=0;
-        numberWaterNoti=0;
-        numberPruneNoti=0;
-        numberSprayNoti=0;
+        numberFetilizerNoti = 0;
+        numberWaterNoti = 0;
+        numberPruneNoti = 0;
+        numberSprayNoti = 0;
         Date date;
         for (int i = 0; i < plants.size(); i++) {
             Plant plant = plants.get(i);
@@ -371,6 +495,17 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     plants.add(plant);
                     plantAdapter.notifyItemChanged(plants.size() - 1);
                     setNotiView();
+                    //mInterstitialAd.show();
+                }
+            }
+        }
+        if (requestCode == REQUEST_CODE_VIP) {
+            if (resultCode == Activity.RESULT_OK) {
+                assert data != null;
+                String typeResult = data.getStringExtra(KEY.TYPE_RESULT);
+                assert typeResult != null;
+                if (typeResult.equals(KEY.CREATE)) {
+                    mInterstitialAd.show();
                 }
             }
         }
@@ -383,10 +518,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     plants.remove(positionSave);
                     plantAdapter.notifyDataSetChanged();
                     setNotiView();
+
+                    //mInterstitialAd.show();
                 }
                 if (typeResult.equals(KEY.UPDATE)) {
                     updateView(positionSave);
                     setNotiView();
+
+                    //mInterstitialAd.show();
                 }
             }
         }

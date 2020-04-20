@@ -7,7 +7,7 @@
     <RelativeLayout
         android:id="@+id/toolBar"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/_120sdp"
+        android:layout_height="@dimen/_110sdp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
@@ -76,7 +76,7 @@
             android:layout_below="@+id/imgBack"
             android:layout_alignStart="@+id/imgBack"
             android:layout_marginStart="33dp"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="@dimen/_2sdp"
             android:background="@drawable/vip_banner" />
 
         <TextView
@@ -122,6 +122,19 @@
 
     </RelativeLayout>
 
+    <LinearLayout
+        android:id="@+id/nativeAds"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintTop_toBottomOf="@+id/toolBar">
+
+        <FrameLayout
+            android:id="@+id/fl_adplaceholder"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -130,13 +143,13 @@
         android:paddingTop="@dimen/_5sdp"
         android:paddingEnd="@dimen/_5sdp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/toolBar">
+        app:layout_constraintTop_toBottomOf="@id/nativeAds">
 
         <TextView
             android:id="@+id/txtTT1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/_10sdp"
+            android:layout_marginStart="@dimen/_5sdp"
             android:layout_marginTop="@dimen/_5sdp"
             android:text="General"
             android:textColor="@color/dark_blue"
@@ -149,7 +162,7 @@
             android:id="@+id/llSetting"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/_10sdp"
+            android:layout_marginTop="@dimen/_5sdp"
             android:background="@drawable/shape_conner_white_bound"
             android:orientation="vertical"
             android:padding="@dimen/_15sdp"
@@ -159,17 +172,25 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
-                <TextView
+                <androidx.cardview.widget.CardView
+                    app:cardCornerRadius="@dimen/_10sdp"
+                    app:cardBackgroundColor="@color/gray"
                     android:id="@+id/btnSaveName"
+                    android:foreground="?attr/selectableItemBackground"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="@dimen/_5sdp"
-                    android:background="@drawable/shape_btn_gray"
-                    android:padding="@dimen/_5sdp"
-                    android:text="Save name"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
+                    app:layout_constraintTop_toTopOf="parent">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:padding="@dimen/_5sdp"
+                        android:text="Save name" />
+                </androidx.cardview.widget.CardView>
+
 
                 <TextView
                     android:id="@+id/txtUserName"
@@ -278,7 +299,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_marginTop="@dimen/_10sdp"
+            android:layout_marginTop="@dimen/_5sdp"
             android:background="@drawable/shape_conner_white"
             android:orientation="vertical"
             android:padding="@dimen/_15sdp"

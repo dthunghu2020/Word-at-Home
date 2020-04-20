@@ -42,7 +42,8 @@ public class DBHelper extends SQLiteOpenHelper {
 
     public static final String TABLE_USER_DATA = "TB_USER";
     public static final String COLUMN_USER_NAME = "USER_NAME";
-    public static final String COLUMN_USER_PERMISSION= "USER_PER";
+    public static final String COLUMN_USER_REMIND_NOTIFICATION = "USER_RM_NOTI";
+    public static final String COLUMN_USER_EVERY_DAY_NOTIFICATION= "USER_EVERY_DAY_NOTI";
 
     public static final String SQL_CREATE_TABLE_PLAN = "CREATE TABLE " + TABLE_PLANT + "("
             + COLUMN_PLANT_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -67,7 +68,8 @@ public class DBHelper extends SQLiteOpenHelper {
 
     public static final String SQL_CREATE_TABLE_USER_DATA = "CREATE TABLE " + TABLE_USER_DATA + "("
             + COLUMN_USER_NAME + " TEXT NOT NULL, "
-            + COLUMN_USER_PERMISSION + " TEXT NOT NULL " + ");";
+            + COLUMN_USER_REMIND_NOTIFICATION + " TEXT NOT NULL, "
+            + COLUMN_USER_EVERY_DAY_NOTIFICATION + " TEXT NOT NULL " + ");";
 
     public DBHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -160,21 +162,30 @@ public class DBHelper extends SQLiteOpenHelper {
         db.close();
     }
 
-    public void createUserData(String userName, String per) {
+    public void createUserData(String userName, String rmNoti,String eNoti) {
         SQLiteDatabase database = instance.getWritableDatabase();
 
         ContentValues values = new ContentValues();
         values.put(COLUMN_USER_NAME, userName);
-        values.put(COLUMN_USER_PERMISSION, per);
+        values.put(COLUMN_USER_REMIND_NOTIFICATION, rmNoti);
+        values.put(COLUMN_USER_EVERY_DAY_NOTIFICATION, eNoti);
         database.insert(TABLE_USER_DATA, null, values);
         database.close();
     }
-    public void setPermission(String old ,String permission) {
+    public void setRemindNotification(String old , String rmNoti) {
         SQLiteDatabase db = instance.getWritableDatabase();
 
         ContentValues values = new ContentValues();
-        values.put(COLUMN_USER_PERMISSION, permission);
-        db.update(TABLE_USER_DATA, values, COLUMN_USER_PERMISSION + "='" + old + "'", null);
+        values.put(COLUMN_USER_REMIND_NOTIFICATION, rmNoti);
+        db.update(TABLE_USER_DATA, values, COLUMN_USER_REMIND_NOTIFICATION + "='" + old + "'", null);
+        db.close();
+    }
+    public void setEveryDayNotification(String old , String eNoti) {
+        SQLiteDatabase db = instance.getWritableDatabase();
+
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_USER_EVERY_DAY_NOTIFICATION, eNoti);
+        db.update(TABLE_USER_DATA, values, COLUMN_USER_REMIND_NOTIFICATION + "='" + old + "'", null);
         db.close();
     }
 
@@ -272,20 +283,36 @@ public class DBHelper extends SQLiteOpenHelper {
 
 
 
-    public String getPermission() {
+    public String getRemindNotification() {
         SQLiteDatabase db = instance.getWritableDatabase();
 
         Cursor cursor = db.rawQuery(String.format("SELECT * FROM '%s';", TABLE_USER_DATA), null);
-        String per ="";
+        String rmNoti ="";
         if (cursor.moveToFirst()) {
             while (!cursor.isAfterLast()) {
-                per = cursor.getString(cursor.getColumnIndex(COLUMN_USER_PERMISSION));
+                rmNoti = cursor.getString(cursor.getColumnIndex(COLUMN_USER_REMIND_NOTIFICATION));
                 cursor.moveToNext();
             }
         }
         cursor.close();
         db.close();
-        return per;
+        return rmNoti;
+    }
+
+    public String getEveryDayNotification() {
+        SQLiteDatabase db = instance.getWritableDatabase();
+
+        Cursor cursor = db.rawQuery(String.format("SELECT * FROM '%s';", TABLE_USER_DATA), null);
+        String eNoti ="";
+        if (cursor.moveToFirst()) {
+            while (!cursor.isAfterLast()) {
+                eNoti = cursor.getString(cursor.getColumnIndex(COLUMN_USER_EVERY_DAY_NOTIFICATION));
+                cursor.moveToNext();
+            }
+        }
+        cursor.close();
+        db.close();
+        return eNoti;
     }
 
     public String getUserName() {
